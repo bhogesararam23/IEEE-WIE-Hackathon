@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Icon } from "../components/Icon";
 import { ActionButton, Notice, ScreenHeader } from "../components/ui";
-import { api } from "../lib/api";
+import { api, type AssistantLanguage } from "../lib/api";
 
 /**
  * Cycle tracking has no backend endpoint yet -- the Round 1 brief scoped the
@@ -120,9 +120,15 @@ export function CycleTracker() {
   );
 }
 
+const LANGUAGES: [AssistantLanguage, string][] = [
+  ["en", "English"],
+  ["hi", "हिन्दी"],
+];
+
 /** Ask HerMedi AI: a real, grounded answer from POST /assistant/ask. */
 export function AskHermi() {
   const [question, setQuestion] = useState("");
+  const [language, setLanguage] = useState<AssistantLanguage>("en");
   const [asking, setAsking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ answer: string; disclaimer: string; model_used: string } | null>(
@@ -135,7 +141,7 @@ export function AskHermi() {
     setError(null);
     setResult(null);
     try {
-      setResult(await api.askAssistant(question.trim()));
+      setResult(await api.askAssistant(question.trim(), language));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "That question could not be answered");
     } finally {
@@ -154,6 +160,19 @@ export function AskHermi() {
             icon="sparkles"
             color="pink"
           />
+          <label className="field-label">Answer in</label>
+          <div className="symptom-chips">
+            {LANGUAGES.map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                className={language === value ? "selected" : ""}
+                onClick={() => setLanguage(value)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           <label className="field-label">Your question</label>
           <textarea
             placeholder="Can these medicines be taken together? What is this medicine for?"

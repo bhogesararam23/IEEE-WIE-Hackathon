@@ -17,6 +17,7 @@ For the detailed request/response specification for every endpoint, see [**API_C
 - **Reporting:** Full JSON medication state summary and downloadable styled PDF report rendered with ReportLab (`GET /reports/medication-summary/pdf`).
 - **Audit Logging:** Append-only user action trail recorded for all state mutations, safety checks, and report downloads.
 - **Ask HerMedi AI:** Grounded Q&A (`POST /assistant/ask`) over the caller's profile, confirmed medicines, and active alerts, via Gemini with an automatic Groq fallback. Both free-tier; see `.env.example`.
+- **Jan Aushadhi pricing:** Confirmed medicines carry a `jan_aushadhi` field showing a cheaper PMBJP generic-equivalent when one is known, via `app/services/jan_aushadhi.py`.
 - **Soft Delete:** Enforced globally across all domain entities via a SQLAlchemy ORM event listener (`app/core/soft_delete.py`).
 
 ---
@@ -142,3 +143,9 @@ wherever your API is listening.
    Defaults to `dev-insecure-change-me` in local development. For staging/production, override `SECRET_KEY` in environment variables.
 3. **Password Hashing / Passlib Migration:**
    Currently using `passlib[bcrypt]`. Python 3.12+ deprecated `spwd` module which generates soft warnings under `passlib`. Future work will migrate to direct `argon2-cffi` or `pyca/cryptography` password hashing.
+4. **Curated Jan Aushadhi Dataset:**
+   `app/data/jan_aushadhi_generics.csv` covers 6 ingredients (Paracetamol, Cetirizine, Pantoprazole, Amoxicillin, Azithromycin, Ciprofloxacin), priced from the government's published PMBJP product list — not the full ~2,110-product PMBJP catalogue, and not a live feed. A `null` `jan_aushadhi` field means "not in this demo dataset," not "unavailable at a real Jan Aushadhi Kendra." Same swap-the-loader pattern as the DDI dataset: `app/services/jan_aushadhi.py`'s `_load_generics()` is the one place to point at the live PMBI catalogue later.
+5. **Hindi Translation via MyMemory:**
+   `POST /assistant/ask` with `"language": "hi"` translates the answer through the free MyMemory API (`app/services/assistant.py`'s `_translate_to_hindi()`), which caps anonymous requests at 500 bytes and ~5,000 chars/day (no key) or ~50,000/day (with an email in the `de` param — not currently set). A translation failure falls back to the English chunk rather than erroring the request.
+6. **Reminder Notifications Need the Tab Open:**
+   `frontend/src/lib/notifications.ts` fires real browser `Notification`s by polling active reminders every 30s from an open tab — there is no service worker, Push API, or VAPID-backed push server, so a closed browser or backgrounded/killed tab will not notify. That's future work, not this build.

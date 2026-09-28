@@ -219,3 +219,87 @@ async def test_context_includes_profile_medicines_and_alerts(
     assert "trimester 2" in context
     assert "Crocin" in context
     assert "Disprin" in context
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_ask_defaults_to_english(
+    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("GEMINI_API_KEY", "fake-gemini-key")
+    get_settings.cache_clear()
+
+    async def fake_gemini(client, **kwargs):  # noqa: ANN001, ARG001
+        return "Paracetamol is generally fine."
+
+    monkeypatch.setattr(assistant_service, "_call_gemini", fake_gemini)
+
+    token = await register(client)
+    response = await client.post(
+        "/assistant/ask", json={"question": "hello"}, headers=auth(token)
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["language"] == "en"
+    assert body["answer"] == "Paracetamol is generally fine."
+    assert body["disclaimer"] == assistant_service.DISCLAIMER
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_ask_translates_answer_when_hindi_requested(
+    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("GEMINI_API_KEY", "fake-gemini-key")
+    get_settings.cache_clear()
+
+    async def fake_gemini(client, **kwargs):  # noqa: ANN001, ARG001
+        return "Paracetamol is generally fine."
+
+    async def fake_translate(client, text):  # noqa: ANN001
+        assert text == "Paracetamol is generally fine."
+        return "पैरासिटामोल आम तौर पर ठीक है।"
+
+    monkeypatch.setattr(assistant_service, "_call_gemini", fake_gemini)
+    monkeypatch.setattr(assistant_service, "_translate_to_hindi", fake_translate)
+
+    token = await register(client)
+    response = await client.post(
+        "/assistant/ask",
+        json={"question": "hello", "language": "hi"},
+        headers=auth(token),
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["language"] == "hi"
+    assert body["answer"] == "पैरासिटामोल आम तौर पर ठीक है।"
+    assert body["disclaimer"] == assistant_service._DISCLAIMER_HI
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_translate_to_hindi_falls_back_to_english_on_chunk_failure() -> None:
+    """A MyMemory hiccup on one chunk must not blank or crash the whole answer."""
+
+    class _BrokenClient:
+        async def get(self, *args, **kwargs):  # noqa: ANN001, ARG002
+            raise httpx.ConnectTimeout("mymemory is down")
+
+    result = await assistant_service._translate_to_hindi(
+        _BrokenClient(), "Paracetamol is safe. Ibuprofen needs care."
+    )
+    assert "Paracetamol is safe" in result
+    assert "Ibuprofen needs care" in result
+
+
+def test_sentence_chunks_splits_long_text_under_byte_cap() -> None:
+    text = " ".join(f"Sentence number {i} is here." for i in range(1, 30))
+    chunks = assistant_service._sentence_chunks(text, max_bytes=100)
+    assert len(chunks) > 1
+    for chunk in chunks:
+        assert len(chunk.encode("utf-8")) <= 100
+
+
+def test_sentence_chunks_keeps_short_text_as_one_chunk() -> None:
+    chunks = assistant_service._sentence_chunks("Short and sweet.", max_bytes=480)
+    assert chunks == ["Short and sweet."]

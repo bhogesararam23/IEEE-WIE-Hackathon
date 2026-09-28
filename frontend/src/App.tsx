@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Icon } from "./components/Icon";
 import { nav, type ScreenId } from "./lib/navigation";
 import { CONTEXT_LABELS, initials } from "./lib/format";
+import { useReminderNotifications } from "./lib/notifications";
 import { useSession } from "./lib/session";
 import Medicines from "./screens/Medicines";
 import Overview from "./screens/Overview";
@@ -28,6 +29,7 @@ export default function App() {
   const [screen, setScreen] = useState<ScreenId>("overview");
   const [mobileNav, setMobileNav] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  useReminderNotifications();
 
   if (status === "loading") return <Loading />;
   if (status === "anonymous" || !user) return <SignIn />;
