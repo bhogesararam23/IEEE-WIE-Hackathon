@@ -75,6 +75,31 @@ This document defines the REST API contract for the HerMediSafe FastAPI backend.
 
 ---
 
+### 3. Ask HerMedi AI
+- **Endpoint:** `POST /assistant/ask`
+- **Auth Required:** Yes (`Authorization: Bearer <token>`)
+- **Purpose:** Grounded Q&A over the caller's own maternal context, confirmed
+  medicines, and active interaction alerts. Tries Gemini first; falls back to
+  Groq if Gemini errors, times out, or is rate-limited. Both are free-tier
+  providers — see `.env.example` for where to get keys.
+- **Request Body (`application/json`):**
+```json
+{
+  "question": "Can I take paracetamol for a headache?"
+}
+```
+- **Response (`200 OK`):**
+```json
+{
+  "answer": "Paracetamol is generally considered the first-choice pain reliever...",
+  "model_used": "gemini",
+  "disclaimer": "This is general information, not a diagnosis or prescription..."
+}
+```
+- **Errors:** `503` if neither provider is configured, or both calls fail.
+
+---
+
 ## Section 1: Health & System
 
 ### `GET /health`

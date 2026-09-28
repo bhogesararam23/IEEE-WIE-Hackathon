@@ -16,6 +16,7 @@ For the detailed request/response specification for every endpoint, see [**API_C
 - **Reminders:** Schedule dose reminders with time of day and frequency string.
 - **Reporting:** Full JSON medication state summary and downloadable styled PDF report rendered with ReportLab (`GET /reports/medication-summary/pdf`).
 - **Audit Logging:** Append-only user action trail recorded for all state mutations, safety checks, and report downloads.
+- **Ask HerMedi AI:** Grounded Q&A (`POST /assistant/ask`) over the caller's profile, confirmed medicines, and active alerts, via Gemini with an automatic Groq fallback. Both free-tier; see `.env.example`.
 - **Soft Delete:** Enforced globally across all domain entities via a SQLAlchemy ORM event listener (`app/core/soft_delete.py`).
 
 ---
@@ -107,6 +108,7 @@ python seed_demo.py
 | **Reports** | `GET` | `/reports/medication-summary` | Full JSON medication state summary |
 | | `GET` | `/reports/medication-summary/pdf` | Downloadable styled PDF report |
 | **Audit Logs** | `GET` | `/audit-logs` | Paginated user audit trail, newest first |
+| **Assistant** | `POST` | `/assistant/ask` | Ask HerMedi AI: grounded Q&A via Gemini, falling back to Groq |
 
 ---
 

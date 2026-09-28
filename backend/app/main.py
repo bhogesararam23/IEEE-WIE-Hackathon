@@ -14,7 +14,18 @@ from fastapi.staticfiles import StaticFiles
 from app.core import soft_delete
 from app.core.config import get_settings
 from app.core.database import engine
-from app.routers import auth, audit, health, interactions, medicines, prescriptions, reminders, reports, users
+from app.routers import (
+    assistant,
+    audit,
+    auth,
+    health,
+    interactions,
+    medicines,
+    prescriptions,
+    reminders,
+    reports,
+    users,
+)
 from app.services.health import check_database
 from app.services.storage import local_storage_root
 
@@ -92,6 +103,7 @@ def create_app() -> FastAPI:
     application.include_router(reminders.router)
     application.include_router(reports.router)
     application.include_router(audit.router)
+    application.include_router(assistant.router)
 
     # Uploaded prescriptions are served straight off disk. Only mounted when the
     # local backend is actually in use: a cloud backend has no directory to mount,
