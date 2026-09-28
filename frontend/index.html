@@ -7,6 +7,11 @@
     <meta name="robots" content="noindex, nofollow" />
     <link rel="icon" type="image/svg+xml" href="/src/assets/hermedisafe-logo.svg" />
     <title>HerMediSafe</title>
+    <!-- Google Identity Services: renders the "Sign in with Google" button
+         and issues the ID token src/lib/google.ts hands to POST /auth/google.
+         Loaded here rather than dynamically injected so the button can render
+         the moment SignIn mounts, with no race against a script still loading. -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
   <body>
     <div id="root"></div>

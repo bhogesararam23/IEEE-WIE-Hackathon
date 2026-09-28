@@ -6,20 +6,30 @@ tested without a Request.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
+from datetime import UTC, datetime
 
+from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token as google_id_token
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.security import create_access_token, hash_password, verify_password
 from app.models.user import User
+
+logger = logging.getLogger(__name__)
 
 __all__ = [
     "AuthResult",
     "DuplicateEmailError",
+    "GoogleAuthError",
+    "GoogleNotConfiguredError",
     "InvalidCredentialsError",
     "authenticate",
+    "authenticate_google",
     "signup",
 ]
 
@@ -112,6 +122,78 @@ async def authenticate(session: AsyncSession, *, email: str, password: str) -> U
         raise InvalidCredentialsError
 
     return user
+
+
+class GoogleNotConfiguredError(Exception):
+    """``GOOGLE_CLIENT_ID`` is unset; the router turns this into a 503."""
+
+
+class GoogleAuthError(Exception):
+    """The ID token failed verification, or its email is unverified."""
+
+
+async def authenticate_google(
+    session: AsyncSession, *, credential: str
+) -> tuple[User, bool]:
+    """Verify a Google ID token and find-or-create the matching user.
+
+    Returns ``(user, created)``. Trusts Google's signature over the claims --
+    ``verify_oauth2_token`` checks signature, issuer, audience and expiry, and
+    raises on any mismatch -- never anything the client asserts on its own.
+
+    An email that already has a password-based account is treated as the same
+    person: Google sign-in logs them into that existing row rather than
+    creating a second account with the same address, which is the simpler
+    behavior for someone who registered by hand and later clicks "Sign in
+    with Google" on the same address.
+    """
+    settings = get_settings()
+    if not settings.google_client_id:
+        raise GoogleNotConfiguredError
+
+    try:
+        claims = google_id_token.verify_oauth2_token(
+            credential, google_requests.Request(), settings.google_client_id
+        )
+    except ValueError as exc:
+        raise GoogleAuthError(str(exc)) from exc
+
+    email = claims.get("email")
+    if not email or not claims.get("email_verified"):
+        raise GoogleAuthError("Google account has no verified email")
+
+    normalised = _normalise(email)
+    user = await session.scalar(
+        select(User).where(func.lower(User.email) == normalised)
+    )
+    if user is not None:
+        return user, False
+
+    full_name = (claims.get("name") or normalised.split("@")[0]).strip()[:200]
+    user = User(
+        email=normalised,
+        hashed_password=None,
+        full_name=full_name,
+        # Matches the manual signup flow's immediate consent stamp (the
+        # frontend calls giveConsent() right after signup, with no separate
+        # confirmation step) -- a Google account gets the same net effect in
+        # one round trip instead of two.
+        consent_given_at=datetime.now(UTC),
+    )
+    session.add(user)
+    try:
+        await session.flush()
+    except IntegrityError as exc:
+        # Lost a race against a concurrent signup/Google-login for the same
+        # email -- same shape as signup()'s race handling.
+        await session.rollback()
+        user = await session.scalar(
+            select(User).where(func.lower(User.email) == normalised)
+        )
+        if user is None:  # pragma: no cover - concurrent row would have to vanish too
+            raise GoogleAuthError("could not create account") from exc
+        return user, False
+    return user, True
 
 
 def issue_token(user: User) -> AuthResult:

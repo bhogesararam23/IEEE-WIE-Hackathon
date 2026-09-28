@@ -27,6 +27,9 @@ class AuditAction(StrEnum):
     # Also recorded with a NULL user_id (that column is nullable precisely so a
     # failure against an unknown email still leaves a trace).
     LOGIN_FAILED = "auth.login_failed"
+    GOOGLE_SIGNUP = "auth.google_signup"
+    GOOGLE_LOGIN = "auth.google_login"
+    GOOGLE_LOGIN_FAILED = "auth.google_login_failed"
     PROFILE_READ = "user.profile.read"
     PROFILE_CREATED = "user.profile.created"
     PROFILE_UPDATED = "user.profile.updated"
