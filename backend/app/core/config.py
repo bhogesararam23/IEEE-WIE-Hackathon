@@ -129,6 +129,33 @@ class Settings(BaseSettings):
         description="Hard cap on prescription upload size in bytes.",
     )
 
+    # --- AI integrations ---------------------------------------------------
+    gemini_api_key: str | None = Field(
+        default=None,
+        description="Google AI Studio key (aistudio.google.com/apikey). "
+        "Free tier, no billing account required. Powers Ask HerMedi AI.",
+    )
+    gemini_model: str = Field(
+        default="gemini-2.0-flash",
+        description="Gemini model id used for chat completions.",
+    )
+    groq_api_key: str | None = Field(
+        default=None,
+        description="Groq key (console.groq.com/keys). Free tier, no billing "
+        "account required. Used as the Ask HerMedi AI fallback when Gemini is "
+        "rate-limited or unreachable.",
+    )
+    groq_model: str = Field(
+        default="llama-3.3-70b-versatile",
+        description="Groq model id used for the Gemini fallback path.",
+    )
+    pubmed_api_key: str | None = Field(
+        default=None,
+        description="Optional NCBI E-utilities key (ncbi.nlm.nih.gov account -> "
+        "API Key Management). Raises the rate limit from 3req/s to 10req/s; "
+        "E-utilities works without a key at the lower limit.",
+    )
+
 
 @lru_cache
 def get_settings() -> Settings:
