@@ -93,7 +93,10 @@ async def build_medication_summary(
     alerts.sort(key=lambda a: _SEVERITY_ORDER.get(str(a.severity), 9))
 
     return {
-        "generated_at": datetime.now(UTC).isoformat() + "Z",
+        # `isoformat()` already ends in "+00:00"; appending "Z" produced
+        # "...+00:00Z", which is not valid ISO 8601 and parses as Invalid Date in
+        # JavaScript. Match the "Z" form Pydantic emits for every other timestamp.
+        "generated_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         "user_id": user_id,
         "confirmed_medicines": [
             {

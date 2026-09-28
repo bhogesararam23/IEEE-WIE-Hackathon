@@ -6,9 +6,10 @@ This document defines the REST API contract for the HerMediSafe FastAPI backend.
 
 ## Overview & Global Conventions
 
-- **Base URL:** `http://localhost:8000` (or `http://<server-ip>:8000`)
-- **Interactive Swagger Docs:** `http://localhost:8000/docs`
-- **ReDoc:** `http://localhost:8000/redoc`
+- **Base URL:** `http://localhost:8010` in this checkout (compose's default is 8000;
+  8010 because port 8000 is occupied on the development machine)
+- **Interactive Swagger Docs:** `<base>/docs`
+- **ReDoc:** `<base>/redoc`
 - **Authentication:** Bearer JWT in HTTP Header: `Authorization: Bearer <access_token>`
 - **Soft Delete:** Global soft-delete filter applied to all models (deleted accounts/rows are omitted from responses).
 - **Audit Trail:** All write operations, safety checks, and report generations write to `audit_logs`.
@@ -131,18 +132,22 @@ This document defines the REST API contract for the HerMediSafe FastAPI backend.
 ### `POST /users/me/profile`
 - **Auth Required:** Yes
 - **Request Body:**
+
+`context_type` is one of `general`, `planning_pregnancy`, `pregnant`, `breastfeeding`.
+`trimester` (1-3) is required for `pregnant` and must be null otherwise;
+`infant_age_months` (0-240) is required for `breastfeeding` and must be null otherwise.
+
 ```json
 {
   "context_type": "pregnant",
-  "is_pregnant": true,
   "trimester": 2,
-  "is_breastfeeding": false,
-  "child_age_months": null,
-  "chronic_conditions": ["hypertension"],
-  "known_allergies": ["penicillin"]
+  "infant_age_months": null,
+  "is_premature_infant": null
 }
 ```
 - **Response (`201 Created` / `200 OK`):** Updated user profile.
+- **Errors:** `422` when the fields contradict `context_type` (validated in
+  `UserProfilePayload`, mirrored by DB CHECK constraints).
 
 ### `POST /users/me/consent`
 - **Auth Required:** Yes
