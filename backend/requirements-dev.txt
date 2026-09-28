@@ -2,7 +2,10 @@
 #   pip install -r requirements.txt -r requirements-dev.txt
 -r requirements.txt
 
-pytest==8.3.4
-pytest-asyncio==0.25.0
+pytest==9.1.1
+# 1.x or newer: `asyncio_default_test_loop_scope` in pytest.ini does not exist in
+# the 0.25 series, so the shared event loop was silently never configured and
+# every Postgres-backed test died with "Future attached to a different loop".
+pytest-asyncio==1.4.0
 httpx==0.28.1
 ruff==0.8.4
