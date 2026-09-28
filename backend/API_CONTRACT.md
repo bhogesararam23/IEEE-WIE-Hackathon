@@ -225,7 +225,7 @@ This document defines the REST API contract for the HerMediSafe FastAPI backend.
 ### `GET /medicines`
 - **Auth Required:** Yes
 - **Query Params:** `confirmed=true|false`, `status=active|discontinued|rejected`, `limit`, `offset`
-- **Response (`200 OK`):** Page of user's medicines with `normalized_ingredient`, `source`, and `confidence_score`.
+- **Response (`200 OK`):** Page of user's medicines with `normalized_ingredient`, `source`, `confidence_score`, and `jan_aushadhi` (a cheaper PMBJP generic-equivalent — `{product_name, unit, mrp_inr}` — when the ingredient is in the curated seed dataset, else `null`).
 
 ### `POST /medicines`
 - **Auth Required:** Yes

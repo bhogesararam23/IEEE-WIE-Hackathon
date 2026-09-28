@@ -263,6 +263,7 @@ footer img { width: 125px; height: auto; } footer p { margin: 0; flex: 1; } foot
 .medicine-list strong, .duplicate-list strong, .reminder-list strong { overflow-wrap: anywhere; }
 .medicine-list.review li { background: #fffaf0; border-color: #f0e0c8; }
 .row-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.row-badges { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 
 .reminder-list .reminder-time { width: 74px; font: 700 19px/1 "Playfair Display", serif; color: #a82558; }
 .reminder-list li.muted { opacity: .55; }
