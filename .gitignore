@@ -1,0 +1,36 @@
+# Original handoff archives from the team — kept on disk, not in history.
+archive/
+
+# Competition paperwork: the Round 1 submission names team members and their
+# institutions, and the logo export still carries its stock-provider watermark.
+# Both stay local while this repo is public.
+docs/
+
+# Python (backend)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+storage/
+
+# Local config: the .env files in this repo hold working dev credentials, but
+# they must never become the reason a real secret reaches a public remote.
+.env
+.env.local
+!.env.example
+
+# Node (frontend)
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
