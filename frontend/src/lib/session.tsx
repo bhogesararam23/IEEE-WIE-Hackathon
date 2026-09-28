@@ -15,6 +15,7 @@ interface SessionValue {
   status: SessionStatus;
   user: CurrentUser | null;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: (idToken: string) => Promise<void>;
   signup: (full_name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   refresh: () => Promise<void>;
@@ -54,6 +55,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       user,
       login: async (email, password) => {
         tokenStore.write((await api.login({ email, password })).access_token);
+        await loadUser();
+      },
+      loginWithGoogle: async (idToken) => {
+        // No separate giveConsent() call: the backend stamps consent at
+        // account creation for a brand-new Google account, matching what
+        // signup() below does in two round-trips instead of one.
+        tokenStore.write((await api.googleLogin(idToken)).access_token);
         await loadUser();
       },
       signup: async (full_name, email, password) => {

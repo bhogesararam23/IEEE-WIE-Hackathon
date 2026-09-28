@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 from app.core.config import get_settings
 
 __all__ = [
+    "GoogleAuthRequest",
     "LoginRequest",
     "SignupRequest",
     "TokenResponse",
@@ -62,6 +63,16 @@ class LoginRequest(BaseModel):
 
     email: EmailStr
     password: str = Field(min_length=1, max_length=72)
+
+
+class GoogleAuthRequest(BaseModel):
+    """The ID token Google Identity Services hands the frontend after sign-in."""
+
+    model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
+
+    credential: str = Field(
+        min_length=1, description="Google ID token (JWT) from the GIS button callback."
+    )
 
 
 class TokenResponse(BaseModel):

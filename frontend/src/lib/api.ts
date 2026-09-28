@@ -253,6 +253,8 @@ export const api = {
     request<TokenResponse>("/auth/signup", { body: input }),
   login: (input: { email: string; password: string }) =>
     request<TokenResponse>("/auth/login", { body: input }),
+  googleLogin: (idToken: string) =>
+    request<TokenResponse>("/auth/google", { body: { credential: idToken } }),
 
   me: () => request<CurrentUser>("/users/me"),
   saveProfile: (input: {
