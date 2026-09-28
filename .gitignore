@@ -31,6 +31,7 @@ dist/
 # Editors and OS
 .vscode/
 .idea/
+.claude/
 .DS_Store
 Thumbs.db
 *.log
