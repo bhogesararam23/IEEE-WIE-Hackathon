@@ -1,0 +1,41 @@
+# HerMediSafe API - runtime dependencies
+# Python 3.11+
+
+# --- Web framework ----------------------------------------------------------
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+# Required by FastAPI for multipart/form-data request bodies, i.e. the
+# prescription upload endpoint. Without it, `File(...)` raises at import time.
+python-multipart==0.0.20
+
+# --- Data / validation ------------------------------------------------------
+pydantic==2.10.4
+pydantic-settings==2.7.0
+# EmailStr in the signup schema: catches malformed addresses at the edge with a
+# proper 422 instead of storing an address that can never receive mail.
+pydantic[email]==2.10.4
+
+# --- Medicine reconciliation ------------------------------------------------
+# Fuzzy brand -> generic ingredient matching, so "Crocin 500mg" and "Dolo 650"
+# are recognised as the same active ingredient. Compiled, unlike difflib, which
+# matters because this runs on every medicine confirmation.
+rapidfuzz==3.11.0
+
+# --- Auth -------------------------------------------------------------------
+# passlib is unmaintained (last release 2020) and warns on bcrypt >= 4.1 because
+# it probes bcrypt.__about__, which newer bcrypt removed. Pinning 4.0.1 keeps the
+# pair quiet. Migrate to argon2 or the stdlib-friendly pwdlib if this graduates
+# past a hackathon.
+passlib==1.7.4
+bcrypt==4.0.1
+python-jose[cryptography]==3.3.0
+
+# --- Database ---------------------------------------------------------------
+sqlalchemy[asyncio]==2.0.36
+asyncpg==0.30.0
+alembic==1.14.0
+# Sync driver, kept for one-off psql-style scripts and DB tooling.
+psycopg2-binary==2.9.10
+
+# --- PDF generation ---------------------------------------------------------
+reportlab==4.2.5

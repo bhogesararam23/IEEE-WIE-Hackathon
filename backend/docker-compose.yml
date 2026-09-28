@@ -1,0 +1,61 @@
+# HerMediSafe backend: API + PostgreSQL.
+#
+#   cp .env.example .env
+#   docker compose up --build
+#
+# Note: DATABASE_URL is set explicitly below rather than via `env_file: .env`.
+# The .env file targets localhost for native development; inside the network
+# the API must reach Postgres at the `db` service name.
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: hermedisafe-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-hermedisafe}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hermedisafe}
+      POSTGRES_DB: ${POSTGRES_DB:-hermedisafe}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - hermedisafe_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-hermedisafe} -d ${POSTGRES_DB:-hermedisafe}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hermedisafe-api
+    restart: unless-stopped
+    # --reload for local iteration; drop it for a production-style run.
+    command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-hermedisafe}:${POSTGRES_PASSWORD:-hermedisafe}@db:5432/${POSTGRES_DB:-hermedisafe}
+      APP_NAME: ${APP_NAME:-HerMediSafe API}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      DEBUG: ${DEBUG:-true}
+      CORS_ORIGINS: ${CORS_ORIGINS:-["*"]}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    volumes:
+      # Live-reload the source tree without rebuilding the image.
+      - ./app:/app/app
+      - ./alembic:/app/alembic
+      - ./alembic.ini:/app/alembic.ini
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  hermedisafe_pgdata:
+    name: hermedisafe_pgdata

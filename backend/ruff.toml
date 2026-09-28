@@ -1,0 +1,24 @@
+# Lint and format config (ruff, from requirements-dev.txt).
+
+line-length = 88
+target-version = "py311"
+
+[lint]
+select = ["E", "W", "F", "I", "B", "UP", "ASYNC"]
+
+[lint.per-file-ignores]
+# Alembic's template always emits `op` and `sa`; a brand-new migration does not
+# touch them until you write the first operation, so F401 is expected there.
+"alembic/versions/*" = ["F401"]
+
+# B008: `Depends(...)` in an argument default is the documented FastAPI idiom,
+# not mutable-default state. Applied here because the service layer exposes its
+# functions as dependencies too.
+"app/routers/*" = ["B008"]
+"app/services/*" = ["B008"]
+
+[lint.isort]
+known-first-party = ["app", "tests"]
+
+[format]
+docstring-code-format = true

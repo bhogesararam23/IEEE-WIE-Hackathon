@@ -1,0 +1,116 @@
+# HerMediSafe — Backend
+
+FastAPI + PostgreSQL backend for HerMediSafe. Provides authentication, maternal profile management, prescription OCR ingestion, medicine list review and normalization, duplicate drug detection, drug-drug interaction (DDI) safety checks, dose reminders, medication summary reporting (JSON + downloadable PDF), and append-only audit logging.
+
+For the detailed request/response specification for every endpoint, see [**API_CONTRACT.md**](API_CONTRACT.md).
+
+---
+
+## Architecture & Features
+
+- **Auth:** Password authentication with bcrypt and 24h JWT Bearer tokens.
+- **Maternal Profile:** Pregnancy trimester and infant breastfeeding context tracking with validation rules.
+- **Prescription & OCR:** Prescription upload (`multipart/form-data`) with real OCR ingestion (`POST /prescriptions/{id}/ocr-results`) and deterministic mock OCR (`POST /prescriptions/{id}/mock-ocr`).
+- **Medicine Reconciliation:** Ingredient normalization using a fuzzy-matching Indian brand dataset (`indian_brand_ingredient_map.csv`), duplicate drug detection, and human review confirmation/rejection workflow.
+- **DDI Safety Alerts:** Pairwise interaction checking against a mock DDI dataset (`mock_interactions.csv`). Severity-first sorting (HIGH, MODERATE, LOW). Integration endpoint for AI/RAG literature citation writer (`PATCH /alerts/{id}/evidence`).
+- **Reminders:** Schedule dose reminders with time of day and frequency string.
+- **Reporting:** Full JSON medication state summary and downloadable styled PDF report rendered with ReportLab (`GET /reports/medication-summary/pdf`).
+- **Audit Logging:** Append-only user action trail recorded for all state mutations, safety checks, and report downloads.
+- **Soft Delete:** Enforced globally across all domain entities via a SQLAlchemy ORM event listener (`app/core/soft_delete.py`).
+
+---
+
+## Quick Start — Docker Compose (Recommended)
+
+```bash
+cd backend
+docker compose up --build -d
+```
+
+### Reset Database & Seed Demo Data
+To wipe the database, run pending Alembic migrations, and seed demo accounts with realistic prescriptions, medicines, interaction alerts, and reminders for presentation/demo setup:
+
+```bash
+# Option 1: Via Docker Compose
+docker compose exec app python seed_demo.py
+
+# Option 2: Native python
+python seed_demo.py
+```
+
+### Pre-populated Demo Users Created by Seed:
+1. **Pregnant User:**
+   - **Email:** `demo_pregnant@hermedisafe.org`
+   - **Password:** `DemoUser123!`
+   - **Context:** Pregnant, Trimester 2
+   - **Data:** 1 uploaded prescription, 2 confirmed medicines (*Ciprofloxacin 500mg* + *Moxifloxacin 400mg*) which trigger a **HIGH severity** interaction alert, 1 reminder schedule.
+2. **Breastfeeding User:**
+   - **Email:** `demo_breastfeeding@hermedisafe.org`
+   - **Password:** `DemoUser123!`
+   - **Context:** Breastfeeding, Infant age 4 months
+   - **Data:** 1 uploaded prescription, 3 confirmed medicines (*Crocin 500mg* + *Dolo 650* which flag as a **duplicate pair** + *Disprin 325*), 2 interaction alerts.
+
+---
+
+## API Documentation
+
+- **Interactive Swagger UI:** <http://localhost:8000/docs>
+- **ReDoc:** <http://localhost:8000/redoc>
+- **Full API Specification:** See [**API_CONTRACT.md**](API_CONTRACT.md)
+
+### Endpoint Overview
+
+| Group | Method | Endpoint | Description |
+|---|---|---|---|
+| **Health** | `GET` | `/health` | Live service & Postgres check |
+| **Auth** | `POST` | `/auth/signup` | Create account & return JWT |
+| | `POST` | `/auth/login` | Log in & return JWT |
+| **Profile** | `GET` | `/users/me` | Read caller's account & maternal profile |
+| | `POST` | `/users/me/profile` | Create/update maternal profile |
+| | `POST` | `/users/me/consent` | Stamp DPDP consent |
+| | `DELETE` | `/users/me` | Soft-delete account |
+| **Prescriptions** | `POST` | `/prescriptions/upload` | Upload image/PDF prescription |
+| | `GET` | `/prescriptions` | List uploaded prescriptions |
+| | `POST` | `/prescriptions/{id}/ocr-results` | **AI/OCR Handoff:** Ingest OCR extraction proposals |
+| | `POST` | `/prescriptions/{id}/mock-ocr` | Deterministic fake OCR ingestion for dev/testing |
+| **Medicines** | `GET` | `/medicines/pending-review` | Unconfirmed OCR proposals queue |
+| | `GET` | `/medicines` | Confirmed/active medicines list |
+| | `POST` | `/medicines` | Add manual medicine entry |
+| | `PATCH` | `/medicines/{id}/confirm` | Confirm proposal, normalize ingredient & check dups |
+| | `PATCH` | `/medicines/{id}/reject` | Dismiss unconfirmed proposal |
+| **Duplicates** | `GET` | `/medicines/duplicates` | List suspected duplicate pairs |
+| | `PATCH` | `/medicines/duplicates/{id}/resolve` | Resolve duplicate (`keep_both`, `merged`, `not_a_duplicate`) |
+| **Alerts (DDI)** | `POST` | `/medicines/check-interactions` | Run DDI check over active confirmed medicines |
+| | `GET` | `/alerts` | List alerts (sorted severity-first) |
+| | `PATCH` | `/alerts/{id}/mark-reviewed` | Clinician mark reviewed |
+| | `PATCH` | `/alerts/{id}/evidence` | **AI/RAG Handoff:** Attach source literature & citations |
+| **Reminders** | `POST` | `/reminders` | Create dose reminder schedule |
+| | `GET` | `/reminders` | List active reminders |
+| | `PATCH` | `/reminders/{id}` | Update reminder time/frequency/active status |
+| | `DELETE` | `/reminders/{id}` | Soft-delete reminder |
+| **Reports** | `GET` | `/reports/medication-summary` | Full JSON medication state summary |
+| | `GET` | `/reports/medication-summary/pdf` | Downloadable styled PDF report |
+| **Audit Logs** | `GET` | `/audit-logs` | Paginated user audit trail, newest first |
+
+---
+
+## Running Pytest Suite
+
+```bash
+# Inside Docker container
+docker compose exec app pytest
+
+# Or natively
+pytest
+```
+
+---
+
+## Known Limitations & Hackathon Considerations
+
+1. **Mocked DDI Dataset:**
+   Because no open-source, licensed DDI database API was available during the hackathon, drug-drug interactions are matched against a static seed dataset (`app/data/mock_interactions.csv`). The logic is isolated inside `app/services/interactions.py` behind `_load_interactions()`, so swapping in a real FDA/RxNorm API requires changing only that loader.
+2. **SECRET_KEY Configuration:**
+   Defaults to `dev-insecure-change-me` in local development. For staging/production, override `SECRET_KEY` in environment variables.
+3. **Password Hashing / Passlib Migration:**
+   Currently using `passlib[bcrypt]`. Python 3.12+ deprecated `spwd` module which generates soft warnings under `passlib`. Future work will migrate to direct `argon2-cffi` or `pyca/cryptography` password hashing.
