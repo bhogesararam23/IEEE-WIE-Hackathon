@@ -39,3 +39,9 @@ psycopg2-binary==2.9.10
 
 # --- PDF generation ---------------------------------------------------------
 reportlab==4.2.5
+
+# --- AI integrations ---------------------------------------------------------
+# Async HTTP client used to call Gemini and Groq (both plain REST, no SDK) from
+# app/services/assistant.py. Already a transitive test dependency; pinned here
+# too now that it is called at runtime, not just from tests.
+httpx==0.28.1

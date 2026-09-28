@@ -136,8 +136,10 @@ class Settings(BaseSettings):
         "Free tier, no billing account required. Powers Ask HerMedi AI.",
     )
     gemini_model: str = Field(
-        default="gemini-2.0-flash",
-        description="Gemini model id used for chat completions.",
+        default="gemini-flash-latest",
+        description="Gemini model id used for chat completions. 'gemini-flash-latest' "
+        "is a Google-maintained alias that always points at the current "
+        "recommended flash model, so it survives model retirements.",
     )
     groq_api_key: str | None = Field(
         default=None,
@@ -146,8 +148,10 @@ class Settings(BaseSettings):
         "rate-limited or unreachable.",
     )
     groq_model: str = Field(
-        default="llama-3.3-70b-versatile",
-        description="Groq model id used for the Gemini fallback path.",
+        default="openai/gpt-oss-120b",
+        description="Groq model id used for the Gemini fallback path. Groq's "
+        "catalog changes over time (check console.groq.com/docs/models); this "
+        "is the current general-purpose free-tier chat model.",
     )
     pubmed_api_key: str | None = Field(
         default=None,

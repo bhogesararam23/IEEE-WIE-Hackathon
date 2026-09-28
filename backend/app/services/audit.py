@@ -70,6 +70,9 @@ class AuditAction(StrEnum):
     # --- audit log access ---
     AUDIT_LOG_READ = "audit.read"
 
+    # --- AI assistant ---
+    ASSISTANT_QUESTION_ASKED = "assistant.question_asked"
+
 
 async def record(
     session: AsyncSession,
