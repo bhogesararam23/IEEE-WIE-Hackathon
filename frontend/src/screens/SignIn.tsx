@@ -51,13 +51,6 @@ export default function SignIn() {
     }
   };
 
-  const useDemoAccount = () => {
-    setMode("login");
-    setEmail("demo_pregnant@hermedisafe.org");
-    setPassword("DemoUser123!");
-    setError(null);
-  };
-
   return (
     <main className="auth-page">
       <section className="auth-story">
@@ -184,9 +177,6 @@ export default function SignIn() {
             <button onClick={() => setMode(mode === "login" ? "signup" : "login")}>
               {mode === "login" ? "Create a secure account" : "Sign in instead"}
             </button>
-          </p>
-          <p className="create-account">
-            Reviewing a build? <button onClick={useDemoAccount}>Fill in the demo account</button>
           </p>
           <div className="auth-safety">
             <Icon name="shield" size={17} />
