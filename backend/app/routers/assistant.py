@@ -39,8 +39,8 @@ async def ask_assistant(
     audited, consistent with every other write in this API.
     """
     try:
-        answer, model_used = await assistant_service.ask(
-            session, user=user, question=payload.question
+        answer, model_used, disclaimer = await assistant_service.ask(
+            session, user=user, question=payload.question, language=payload.language
         )
     except assistant_service.AssistantUnavailableError as exc:
         logger.error("Assistant unavailable for user %s: %s", user.id, exc)
@@ -61,5 +61,6 @@ async def ask_assistant(
     return AssistantAskResponse(
         answer=answer,
         model_used=model_used,
-        disclaimer=assistant_service.DISCLAIMER,
+        disclaimer=disclaimer,
+        language=payload.language,
     )

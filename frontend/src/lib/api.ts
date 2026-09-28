@@ -30,6 +30,12 @@ export interface TokenResponse {
   email: string;
 }
 
+export interface JanAushadhiOption {
+  product_name: string;
+  unit: string;
+  mrp_inr: number;
+}
+
 export interface Medicine {
   id: number;
   prescription_id: number | null;
@@ -45,6 +51,7 @@ export interface Medicine {
   is_confirmed: boolean;
   status: MedicineStatus;
   created_at: string;
+  jan_aushadhi: JanAushadhiOption | null;
 }
 
 export interface Prescription {
@@ -124,10 +131,13 @@ export interface AuditLog {
   ip_address: string | null;
 }
 
+export type AssistantLanguage = "en" | "hi";
+
 export interface AssistantAnswer {
   answer: string;
   model_used: string;
   disclaimer: string;
+  language: AssistantLanguage;
 }
 
 export interface MedicationSummary {
@@ -319,7 +329,12 @@ export const api = {
   ) =>
     request<InteractionAlert>(`/alerts/${id}/evidence`, { method: "PATCH", body: input }),
 
-  reminders: () => request<Reminder[]>("/reminders"),
+  reminders: (params: { is_active?: boolean } = {}) => {
+    const query = new URLSearchParams();
+    if (params.is_active !== undefined) query.set("is_active", String(params.is_active));
+    const suffix = query.size ? `?${query}` : "";
+    return request<Reminder[]>(`/reminders${suffix}`);
+  },
   addReminder: (input: { medicine_id: number; time_of_day: string; frequency: string }) =>
     request<Reminder>("/reminders", { body: input }),
   updateReminder: (
@@ -335,6 +350,6 @@ export const api = {
   auditLogs: (limit = 20) =>
     request<{ items: AuditLog[]; total: number }>(`/audit-logs?limit=${limit}`),
 
-  askAssistant: (question: string) =>
-    request<AssistantAnswer>("/assistant/ask", { body: { question } }),
+  askAssistant: (question: string, language: AssistantLanguage = "en") =>
+    request<AssistantAnswer>("/assistant/ask", { body: { question, language } }),
 };

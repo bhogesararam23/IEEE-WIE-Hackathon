@@ -1,8 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Icon } from "../components/Icon";
 import { ActionButton, Modal, Notice, ScreenHeader } from "../components/ui";
 import { api, type Reminder } from "../lib/api";
 import { formatTime } from "../lib/format";
+import {
+  notificationPermission,
+  notificationsSupported,
+  requestNotificationPermission,
+} from "../lib/notifications";
 import { useAsync } from "../lib/session";
 
 const FREQUENCIES: [string, string][] = [
@@ -20,6 +25,18 @@ export default function Reminders() {
   const [draft, setDraft] = useState({ medicine_id: 0, time_of_day: "09:00:00", frequency: "daily" });
   const [busy, setBusy] = useState<number | "new" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [permission, setPermission] = useState(notificationPermission());
+
+  // Permission is granted via a native browser popup outside React's control,
+  // so poll it rather than relying on a callback that doesn't exist.
+  useEffect(() => {
+    const interval = setInterval(() => setPermission(notificationPermission()), 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const enableNotifications = async () => {
+    setPermission(await requestNotificationPermission());
+  };
 
   const run = async (key: number | "new", work: () => Promise<unknown>) => {
     setBusy(key);
@@ -59,10 +76,32 @@ export default function Reminders() {
           <ScreenHeader
             eyebrow="ROUTINE"
             title="Medicine reminders"
-            intro="A simple schedule per medicine. The app records what you take and when; phone notifications are out of scope for this build."
+            intro="A simple schedule per medicine. Notifications fire from this browser tab while it's open -- there's no phone push yet, that needs a push server this build doesn't have."
             icon="bell"
             color="peach"
           />
+
+          {!notificationsSupported() ? (
+            <Notice tone="info" icon="alert">
+              This browser doesn't support notifications, so reminders here are visual only.
+            </Notice>
+          ) : permission === "granted" ? (
+            <Notice tone="ok" icon="check">
+              Notifications are on. Keep this tab open to receive them.
+            </Notice>
+          ) : permission === "denied" ? (
+            <Notice tone="error">
+              Notifications are blocked for this site. Re-enable them in your browser's site
+              settings to get reminders.
+            </Notice>
+          ) : (
+            <Notice tone="info" icon="bell">
+              <span>Turn on notifications to get a real alert when a dose is due. </span>
+              <ActionButton tone="solid" onClick={enableNotifications}>
+                Enable reminders
+              </ActionButton>
+            </Notice>
+          )}
 
           <div className="list-toolbar">
             <ActionButton tone="solid" onClick={() => setCreating(true)}>
