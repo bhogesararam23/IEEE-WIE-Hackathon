@@ -10,6 +10,10 @@ writes through the real backend; there is no mock data layer.
 - `src/lib/api.ts` — the only place that knows HTTP: one `api` object, the response
   types, token storage, and FastAPI error translation
 - `src/lib/session.tsx` — `useSession()` auth context and `useAsync()` data hook
+- `src/lib/google.ts` — thin wrapper around Google Identity Services for the
+  "Sign in with Google" button (`renderGoogleButton`), used by `SignIn.tsx`
+- `src/lib/notifications.ts` — `useReminderNotifications()`, the browser
+  `Notification` polling hook mounted in `App.tsx`
 - `src/lib/navigation.ts` — sidebar items and the overview feature grid
 - `src/lib/format.ts` — date/time/label helpers
 - `src/components/` — `Icon` (inline SVG set) and small shared UI primitives
