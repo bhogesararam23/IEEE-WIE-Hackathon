@@ -15,6 +15,17 @@ The API contract both sides follow lives in
 [`backend/API_CONTRACT.md`](backend/API_CONTRACT.md); live Swagger is at
 `http://localhost:8010/docs`.
 
+## Live deployment
+
+- **App:** <https://hermedisafe.pages.dev> (Cloudflare Pages)
+- **API:** <https://hermedisafe-api.onrender.com> (Render, free tier — the
+  first request after ~15 min idle takes 30-60s to wake up)
+- **Database:** Neon (managed Postgres, TLS required — see
+  `backend/app/core/database.py`'s `DB_SSL_REQUIRE`)
+
+Sign in with the seeded demo accounts (see below), your own account, or
+**Sign in with Google**.
+
 ## Quick start
 
 ```bash
@@ -75,6 +86,12 @@ translation of the answer. Confirmed medicines also carry a `jan_aushadhi`
 field naming a cheaper government generic-equivalent when one is known. All of
 Gemini/Groq/MyMemory are free-tier APIs; see `backend/.env.example` for where
 to get keys.
+
+**Sign in with Google** works alongside email/password (`POST /auth/google`):
+Google Identity Services hands the frontend a signed ID token, the backend
+verifies it against Google's own keys, and finds-or-creates the account by
+its verified email. An account created this way has no password
+(`users.hashed_password` is nullable) — that's expected, not a bug.
 
 Design prototype only, labelled as such in the UI: **Cycle tracker** — the API
 has no endpoints for it.
