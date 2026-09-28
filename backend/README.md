@@ -8,7 +8,7 @@ For the detailed request/response specification for every endpoint, see [**API_C
 
 ## Architecture & Features
 
-- **Auth:** Password authentication with bcrypt and 24h JWT Bearer tokens.
+- **Auth:** Password authentication with bcrypt and 24h JWT Bearer tokens, plus Google Sign-In (`POST /auth/google` — verifies a Google ID token server-side, finds or creates the account).
 - **Maternal Profile:** Pregnancy trimester and infant breastfeeding context tracking with validation rules.
 - **Prescription & OCR:** Prescription upload (`multipart/form-data`) with real OCR ingestion (`POST /prescriptions/{id}/ocr-results`) and deterministic mock OCR (`POST /prescriptions/{id}/mock-ocr`).
 - **Medicine Reconciliation:** Ingredient normalization using a fuzzy-matching Indian brand dataset (`indian_brand_ingredient_map.csv`), duplicate drug detection, and human review confirmation/rejection workflow.
@@ -16,7 +16,7 @@ For the detailed request/response specification for every endpoint, see [**API_C
 - **Reminders:** Schedule dose reminders with time of day and frequency string.
 - **Reporting:** Full JSON medication state summary and downloadable styled PDF report rendered with ReportLab (`GET /reports/medication-summary/pdf`).
 - **Audit Logging:** Append-only user action trail recorded for all state mutations, safety checks, and report downloads.
-- **Ask HerMedi AI:** Grounded Q&A (`POST /assistant/ask`) over the caller's profile, confirmed medicines, and active alerts, via Gemini with an automatic Groq fallback. Both free-tier; see `.env.example`.
+- **Ask HerMedi AI:** Grounded Q&A (`POST /assistant/ask`) over the caller's profile, confirmed medicines, and active alerts, via Gemini with an automatic Groq fallback, with an optional Hindi translation of the answer (MyMemory). All free-tier; see `.env.example`.
 - **Jan Aushadhi pricing:** Confirmed medicines carry a `jan_aushadhi` field showing a cheaper PMBJP generic-equivalent when one is known, via `app/services/jan_aushadhi.py`.
 - **Soft Delete:** Enforced globally across all domain entities via a SQLAlchemy ORM event listener (`app/core/soft_delete.py`).
 
@@ -83,6 +83,7 @@ python seed_demo.py
 | **Health** | `GET` | `/health` | Live service & Postgres check |
 | **Auth** | `POST` | `/auth/signup` | Create account & return JWT |
 | | `POST` | `/auth/login` | Log in & return JWT |
+| | `POST` | `/auth/google` | Verify a Google ID token & return JWT (signs up or logs in) |
 | **Profile** | `GET` | `/users/me` | Read caller's account & maternal profile |
 | | `POST` | `/users/me/profile` | Create/update maternal profile |
 | | `POST` | `/users/me/consent` | Stamp DPDP consent |
@@ -123,7 +124,7 @@ docker compose exec app pytest
 .venv/Scripts/python.exe -m pytest
 ```
 
-168 tests. The suite provisions its own `hermedisafe_test` database on first run
+191 tests. The suite provisions its own `hermedisafe_test` database on first run
 (creating it and applying Alembic migrations) because the DB-backed tests `TRUNCATE`
 every table between cases — pointing them at the development database would wipe the
 seeded demo accounts. Override the name with `TEST_DATABASE_NAME`, and note that
@@ -149,3 +150,5 @@ wherever your API is listening.
    `POST /assistant/ask` with `"language": "hi"` translates the answer through the free MyMemory API (`app/services/assistant.py`'s `_translate_to_hindi()`), which caps anonymous requests at 500 bytes and ~5,000 chars/day (no key) or ~50,000/day (with an email in the `de` param — not currently set). A translation failure falls back to the English chunk rather than erroring the request.
 6. **Reminder Notifications Need the Tab Open:**
    `frontend/src/lib/notifications.ts` fires real browser `Notification`s by polling active reminders every 30s from an open tab — there is no service worker, Push API, or VAPID-backed push server, so a closed browser or backgrounded/killed tab will not notify. That's future work, not this build.
+7. **Google Sign-In Links by Email, Not a Separate Identity:**
+   `POST /auth/google` finds an existing account by the token's verified email and logs into it, rather than keeping Google and password accounts distinct. Simplest behavior for someone who registered by hand and later clicks "Sign in with Google" on the same address, but it means anyone who can prove ownership of an email via Google sign-in gets into whatever password account already used it — acceptable for a hackathon demo, worth reconsidering before real accounts are involved.
