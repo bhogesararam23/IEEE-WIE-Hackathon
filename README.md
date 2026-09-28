@@ -2,7 +2,45 @@
 
 Medicine safety for women's health — prescription reconciliation, duplicate and
 interaction detection, dose reminders, a clinician-ready report, and a grounded
-AI assistant. Built for the IEEE WIE ILS 2026 hackathon.
+AI assistant.
+
+Built by team **NOMOS** for IEEE WIE ILS 2026 (Track 2: HealthTech — Problem
+Statement #4, *The Polypharmacy Crisis*).
+
+## The problem
+
+Women often collect medicines from several disconnected sources — an
+obstetrician, a general physician, a specialist, a pharmacy, and self-care
+purchases — while pregnancy, pre-conception, or breastfeeding changes what is
+actually safe to take together. Nobody along that chain sees the full list at
+once.
+
+The reconciliation gap is well documented, even where a single national
+prevalence number is not: a Rajasthan tertiary-centre study found 1,545
+medicines across 667 prescriptions for 246 pregnant women (2.32 medicines per
+prescription); an AIIMS Rishikesh registry of 305 pregnancies recorded a mean
+cumulative exposure of 6.32 medicines over the course of a pregnancy; and a
+Mysuru hospital audit of 372 inpatients turned up 580 medication-list
+discrepancies, including 345 confirmed drug interactions. This is a
+communication and coordination failure, not a diagnosis problem — which is why
+HerMediSafe stays firmly in the "reconcile and inform" lane rather than
+attempting to prescribe, diagnose, or replace a clinician.
+
+## The solution
+
+The user builds a minimal profile (general, planning pregnancy, pregnant with
+trimester, or breastfeeding with infant age), then uploads prescriptions as
+images or PDFs. OCR proposes each medicine's name, strength, dose, frequency,
+and duration — every extracted item is shown back to the user or pharmacist to
+confirm or reject before it becomes part of the record. Confirmed medicines
+are normalized from Indian brand names to a canonical ingredient, checked
+against each other for duplicates and interactions, and enriched with a
+cheaper Jan Aushadhi generic when one exists.
+
+The design principle is **evidence before explanation**: deterministic rules
+own severity and duplicate detection, and the AI layer is only ever used to
+summarize what was already found in plain language (and, optionally, Hindi) —
+never to invent an interaction or a recommendation on its own.
 
 Two apps, one REST contract:
 
@@ -178,3 +216,17 @@ has no endpoints for it.
   only Render's copy (a real `openssl rand -hex 32` value) is production-grade.
   `.env` files are gitignored throughout, so none of this is in git history,
   but generate your own values if you fork this project.
+
+## Selected references
+
+The problem framing above draws on:
+
+- Saurabh S, Kumar R, Maharshi RP. *Evaluation of Medicine Exposure During
+  Pregnancy at a Tertiary Center of an Indian State.* Maedica, 2020.
+- Choudhary V et al. *Drug Related Adverse Pregnancy Outcomes at a Tertiary
+  Care Hospital from the Foothills of the Himalayas.* J Family Med Prim Care,
+  2021.
+- Syju K et al. *Medication Reconciliation Practices in Two Multispeciality
+  Hospitals.* Indian J Pharm Educ Res, 2023.
+- Anand A et al. *Prevalence of Polypharmacy in Pregnancy: A Systematic
+  Review.* BMJ Open, 2023.
