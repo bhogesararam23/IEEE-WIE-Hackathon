@@ -104,9 +104,16 @@ export default function Medicines() {
                       {medicine.dose ? ` · ${medicine.dose}` : ""}
                     </span>
                   </div>
-                  <Pill tone={medicine.source === "prescription" ? "info" : "muted"}>
-                    {medicine.source === "prescription" ? "From prescription" : "Added by you"}
-                  </Pill>
+                  <div className="row-badges">
+                    <Pill tone={medicine.source === "prescription" ? "info" : "muted"}>
+                      {medicine.source === "prescription" ? "From prescription" : "Added by you"}
+                    </Pill>
+                    {medicine.jan_aushadhi && (
+                      <Pill tone="low">
+                        Generic via Jan Aushadhi · ₹{medicine.jan_aushadhi.mrp_inr.toFixed(2)}
+                      </Pill>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>

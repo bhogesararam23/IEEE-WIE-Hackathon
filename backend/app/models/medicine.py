@@ -23,6 +23,7 @@ from app.models.enums import MedicineSourceType, MedicineStatus, enum_column
 # string "interaction_alert_medicines", so it is registered in Base.metadata
 # even when only this module is imported.
 from app.models.interaction import interaction_alert_medicines
+from app.services.jan_aushadhi import JanAushadhiOption, lookup_generic
 
 if TYPE_CHECKING:
     from app.models.interaction import InteractionAlert
@@ -106,6 +107,17 @@ class Medicine(SoftDeleteMixin, TimestampMixin, Base):
             if self.prescription_id is not None
             else MedicineSourceType.SELF_REPORTED
         )
+
+    @property
+    def jan_aushadhi(self) -> JanAushadhiOption | None:
+        """The PMBJP generic-equivalent option for this ingredient, if any.
+
+        Not a column: this is read-time display enrichment over a small seed
+        CSV (see ``app.services.jan_aushadhi``), never used in a query filter,
+        so there is nothing to keep in sync with a migration. Only a confirmed
+        medicine has a ``normalized_ingredient`` to match against.
+        """
+        return lookup_generic(self.normalized_ingredient)
 
     prescription: Mapped["Prescription | None"] = relationship(
         back_populates="medicines"

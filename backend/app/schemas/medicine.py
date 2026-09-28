@@ -13,12 +13,23 @@ __all__ = [
     "DuplicateFlagResponse",
     "DuplicateResolveRequest",
     "DuplicateResolveResponse",
+    "JanAushadhiOption",
     "ManualMedicineRequest",
     "MedicineConfirmRequest",
     "MedicineRejectRequest",
     "MedicineResponse",
     "PrescriptionMedicine",
 ]
+
+
+class JanAushadhiOption(BaseModel):
+    """A cheaper PMBJP generic-equivalent product for a medicine's ingredient."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    product_name: str
+    unit: str
+    mrp_inr: float
 
 
 class MedicineResponse(BaseModel):
@@ -56,6 +67,12 @@ class MedicineResponse(BaseModel):
     is_confirmed: bool
     status: MedicineStatus
     created_at: datetime
+    jan_aushadhi: JanAushadhiOption | None = Field(
+        default=None,
+        description="Cheaper PMBJP generic-equivalent, if the ingredient is in "
+        "the (small, curated) seed dataset. Null does not mean unavailable in "
+        "real life, only that this demo dataset doesn't cover it.",
+    )
 
 
 class PrescriptionMedicine(BaseModel):

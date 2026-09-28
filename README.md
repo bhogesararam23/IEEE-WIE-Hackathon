@@ -65,12 +65,16 @@ are about to present.
 
 Wired to the API: sign up / sign in (with DPDP consent stamping), health context
 profile, prescription upload and extraction, medicine list with confirm/reject,
-duplicate resolution, interaction checks and evidence, reminders, the medication
-summary and its PDF download, the audit trail, and **Ask HerMedi AI** — a
-grounded chat endpoint (`POST /assistant/ask`, see `backend/API_CONTRACT.md`)
-that answers over the caller's own profile, confirmed medicines, and active
-alerts using Gemini, falling back to Groq if Gemini is unreachable. Both are
-free-tier APIs; see `backend/.env.example` for where to get keys.
+duplicate resolution, interaction checks and evidence, reminders (with real
+browser notifications while the tab is open), the medication summary and its
+PDF download, the audit trail, and **Ask HerMedi AI** — a grounded chat
+endpoint (`POST /assistant/ask`, see `backend/API_CONTRACT.md`) that answers
+over the caller's own profile, confirmed medicines, and active alerts using
+Gemini, falling back to Groq if Gemini is unreachable, with an optional Hindi
+translation of the answer. Confirmed medicines also carry a `jan_aushadhi`
+field naming a cheaper government generic-equivalent when one is known. All of
+Gemini/Groq/MyMemory are free-tier APIs; see `backend/.env.example` for where
+to get keys.
 
 Design prototype only, labelled as such in the UI: **Cycle tracker** — the API
 has no endpoints for it.
