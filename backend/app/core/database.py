@@ -24,6 +24,13 @@ def _build_engine() -> AsyncEngine:
         pool_recycle=settings.db_pool_recycle,
         # Silently replaces connections that the database dropped while idle.
         pool_pre_ping=True,
+        # Plain True, not a query-string sslmode=: asyncpg's own connect()
+        # kwarg is `ssl`, and support for libpq-style sslmode= strings in the
+        # URL has been inconsistent across SQLAlchemy/asyncpg versions. A
+        # boolean has worked reliably since early asyncpg and is all managed
+        # Postgres (Neon, Supabase, RDS) actually needs: TLS with the default
+        # trusted-CA context.
+        connect_args={"ssl": True} if settings.db_ssl_require else {},
     )
 
 
