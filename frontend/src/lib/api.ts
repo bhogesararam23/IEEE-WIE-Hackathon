@@ -124,6 +124,12 @@ export interface AuditLog {
   ip_address: string | null;
 }
 
+export interface AssistantAnswer {
+  answer: string;
+  model_used: string;
+  disclaimer: string;
+}
+
 export interface MedicationSummary {
   generated_at: string;
   user_id: number;
@@ -328,4 +334,7 @@ export const api = {
 
   auditLogs: (limit = 20) =>
     request<{ items: AuditLog[]; total: number }>(`/audit-logs?limit=${limit}`),
+
+  askAssistant: (question: string) =>
+    request<AssistantAnswer>("/assistant/ask", { body: { question } }),
 };

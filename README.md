@@ -66,11 +66,14 @@ are about to present.
 Wired to the API: sign up / sign in (with DPDP consent stamping), health context
 profile, prescription upload and extraction, medicine list with confirm/reject,
 duplicate resolution, interaction checks and evidence, reminders, the medication
-summary and its PDF download, and the audit trail.
+summary and its PDF download, the audit trail, and **Ask HerMedi AI** — a
+grounded chat endpoint (`POST /assistant/ask`, see `backend/API_CONTRACT.md`)
+that answers over the caller's own profile, confirmed medicines, and active
+alerts using Gemini, falling back to Groq if Gemini is unreachable. Both are
+free-tier APIs; see `backend/.env.example` for where to get keys.
 
-Design prototype only, labelled as such in the UI: **Ask HerMedi AI** (the retrieval
-service is a separate teammate boundary), **Wellbeing**, and **Cycle tracker** — the
-API has no endpoints for those three.
+Design prototype only, labelled as such in the UI: **Cycle tracker** — the API
+has no endpoints for it.
 
 ## Known limitations
 
@@ -80,3 +83,5 @@ API has no endpoints for those three.
 - Uploaded prescriptions are served from an **unauthenticated** `/files` mount. Fine
   for demo data, not for real patient records.
 - `SECRET_KEY` is still the development default. Generate one before deploying.
+- Ask HerMedi AI answers are not persisted, only audited (that a question was
+  asked, not its content). It has no memory across turns yet.

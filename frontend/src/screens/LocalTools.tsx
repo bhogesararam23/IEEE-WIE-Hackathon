@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Icon } from "../components/Icon";
 import { ActionButton, Notice, ScreenHeader } from "../components/ui";
+import { api } from "../lib/api";
 
 /**
- * Cycle tracking and the AI question box have no backend endpoints yet — the
- * Round 1 brief scoped the API to reconciliation and safety. These screens keep
- * the design prototype's behaviour and say so, rather than pretending to save.
+ * Cycle tracking has no backend endpoint yet -- the Round 1 brief scoped the
+ * API to reconciliation and safety. This screen keeps the design prototype's
+ * behaviour and says so, rather than pretending to save.
  */
 function OfflineBanner() {
   return (
@@ -119,10 +120,28 @@ export function CycleTracker() {
   );
 }
 
-/** The AI question box has no retrieval service wired up either. */
+/** Ask HerMedi AI: a real, grounded answer from POST /assistant/ask. */
 export function AskHermi() {
   const [question, setQuestion] = useState("");
-  const [answered, setAnswered] = useState(false);
+  const [asking, setAsking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<{ answer: string; disclaimer: string; model_used: string } | null>(
+    null,
+  );
+
+  const ask = async () => {
+    if (!question.trim()) return;
+    setAsking(true);
+    setError(null);
+    setResult(null);
+    try {
+      setResult(await api.askAssistant(question.trim()));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "That question could not be answered");
+    } finally {
+      setAsking(false);
+    }
+  };
 
   return (
     <div className="tool-page">
@@ -131,27 +150,30 @@ export function AskHermi() {
           <ScreenHeader
             eyebrow="HERMEDI AI"
             title="Ask a health question"
-            intro="Retrieval over reviewed sources is the AI teammate's boundary. This box records the question and hands off to that service."
+            intro="Grounded in your own maternal context, confirmed medicines, and active safety alerts. Never a diagnosis or a prescription."
             icon="sparkles"
             color="pink"
           />
-          <OfflineBanner />
           <label className="field-label">Your question</label>
           <textarea
             placeholder="Can these medicines be taken together? What is this medicine for?"
             value={question}
             onChange={(event) => setQuestion(event.target.value)}
           />
-          <ActionButton tone="solid" onClick={() => setAnswered(true)} disabled={!question.trim()}>
-            Continue safely <Icon name="arrow" size={18} />
+          <ActionButton tone="solid" onClick={ask} disabled={!question.trim() || asking}>
+            {asking ? "Asking…" : "Ask HerMedi AI"} <Icon name="arrow" size={18} />
           </ActionButton>
-          {answered && (
+          {error && <Notice tone="error">{error}</Notice>}
+          {result && (
             <div className="result-box">
-              <Icon name="alert" />
-              <p>
-                No answer service is attached to this build yet. Your medicines, alerts and report are
-                live — this screen is the handoff point the AI teammate fills in.
-              </p>
+              <Icon name="sparkles" />
+              <div>
+                <p>{result.answer}</p>
+                <div className="privacy-note">
+                  <Icon name="shield" size={17} />
+                  <p>{result.disclaimer}</p>
+                </div>
+              </div>
             </div>
           )}
         </section>
@@ -159,7 +181,7 @@ export function AskHermi() {
           <div>
             <Icon name="shield" />
             <h3>Evidence before explanation</h3>
-            <p>Answers are expected to cite the source they came from, the same way alerts do.</p>
+            <p>Answers are grounded in your safety data and never override a HIGH severity alert.</p>
           </div>
         </aside>
       </div>
