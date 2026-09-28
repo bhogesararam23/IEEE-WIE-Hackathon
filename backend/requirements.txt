@@ -45,3 +45,13 @@ reportlab==4.2.5
 # app/services/assistant.py. Already a transitive test dependency; pinned here
 # too now that it is called at runtime, not just from tests.
 httpx==0.28.1
+
+# --- Google Sign-In ----------------------------------------------------------
+# Verifies the ID token the frontend gets from Google Identity Services --
+# signature, issuer, audience and expiry -- so app/services/auth.py never
+# trusts a client-supplied claim about who the user is.
+google-auth==2.58.1
+# google.auth.transport.requests (the HTTP transport used to fetch Google's
+# public signing keys) is an optional extra google-auth doesn't pull in
+# itself -- ImportError without it.
+requests==2.34.2

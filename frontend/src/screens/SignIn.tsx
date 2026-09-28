@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Icon } from "../components/Icon";
 import { Notice } from "../components/ui";
+import { googleClientId, renderGoogleButton } from "../lib/google";
 import { useSession } from "../lib/session";
 import logo from "../assets/hermedisafe-logo.svg";
 
@@ -9,7 +10,7 @@ function Logo() {
 }
 
 export default function SignIn() {
-  const { login, signup } = useSession();
+  const { login, loginWithGoogle, signup } = useSession();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -17,6 +18,24 @@ export default function SignIn() {
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const googleButtonRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!googleClientId || !googleButtonRef.current) return;
+    return renderGoogleButton(googleButtonRef.current, (idToken) => {
+      setBusy(true);
+      setError(null);
+      loginWithGoogle(idToken)
+        .catch((cause: unknown) =>
+          setError(cause instanceof Error ? cause.message : "Google sign-in failed"),
+        )
+        .finally(() => setBusy(false));
+    });
+    // Runs once on mount, deliberately: the callback only ever calls stable
+    // functions (api.googleLogin, loadUser), so it never closes over stale
+    // status/user state, and re-running this on every render would
+    // re-initialize the GIS button pointlessly.
+  }, []);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -150,6 +169,15 @@ export default function SignIn() {
               <Icon name="arrow" />
             </button>
           </form>
+
+          {googleClientId && (
+            <>
+              <div className="auth-divider">
+                <span>or</span>
+              </div>
+              <div ref={googleButtonRef} className="google-signin-btn" />
+            </>
+          )}
 
           <p className="create-account">
             {mode === "login" ? "New to HerMediSafe?" : "Already have an account?"}{" "}

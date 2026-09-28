@@ -39,7 +39,10 @@ class User(SoftDeleteMixin, TimestampMixin, Base):
     email: Mapped[str] = mapped_column(
         String(320), nullable=False, unique=True, index=True
     )
-    hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+    # Null for a Google-only account -- there is no password to verify against,
+    # and app/services/auth.py's password login path treats null as "this
+    # account doesn't use a password" rather than a verification failure.
+    hashed_password: Mapped[str | None] = mapped_column(String(255), nullable=True)
     full_name: Mapped[str] = mapped_column(String(200), nullable=False)
     # DPDP: explicit, timestamped opt-in. Set once by POST /users/me/consent;
     # never inferred from page visits.
