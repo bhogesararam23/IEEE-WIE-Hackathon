@@ -7,6 +7,11 @@
 # The .env file targets localhost for native development; inside the network
 # the API must reach Postgres at the `db` service name.
 
+# Explicit project name: without it the project is named after this directory
+# ("backend"), which collides with any other compose stack the team keeps in a
+# folder of the same name and makes `compose down` reach across projects.
+name: hermedisafe
+
 services:
   db:
     image: postgres:16-alpine

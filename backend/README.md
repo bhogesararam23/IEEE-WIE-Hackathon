@@ -23,9 +23,25 @@ For the detailed request/response specification for every endpoint, see [**API_C
 ## Quick Start — Docker Compose (Recommended)
 
 ```bash
-cd backend
 docker compose up --build -d
 ```
+
+## Quick Start — native process + containerised Postgres
+
+Used during development so the API hot-reloads without rebuilding an image:
+
+```bash
+docker compose up -d db                       # Postgres only
+uv venv --python 3.12 .venv                   # or: python -m venv .venv
+uv pip install --python .venv -r requirements.txt -r requirements-dev.txt
+cp .env.example .env                          # already matches the compose credentials
+.venv/Scripts/python.exe seed_demo.py         # migrate + reset + seed demo accounts
+.venv/Scripts/python.exe -m uvicorn app.main:app --port 8010
+```
+
+`.env` targets `localhost:5432`, which is where compose publishes the `db` service.
+Port **8010** rather than 8000 because 8000 was already taken on the development
+machine; the web app's `VITE_API_BASE_URL` expects it.
 
 ### Reset Database & Seed Demo Data
 To wipe the database, run pending Alembic migrations, and seed demo accounts with realistic prescriptions, medicines, interaction alerts, and reminders for presentation/demo setup:
@@ -54,8 +70,8 @@ python seed_demo.py
 
 ## API Documentation
 
-- **Interactive Swagger UI:** <http://localhost:8000/docs>
-- **ReDoc:** <http://localhost:8000/redoc>
+- **Interactive Swagger UI:** <http://localhost:8010/docs>
+- **ReDoc:** <http://localhost:8010/redoc>
 - **Full API Specification:** See [**API_CONTRACT.md**](API_CONTRACT.md)
 
 ### Endpoint Overview
@@ -101,8 +117,18 @@ python seed_demo.py
 docker compose exec app pytest
 
 # Or natively
-pytest
+.venv/Scripts/python.exe -m pytest
 ```
+
+168 tests. The suite provisions its own `hermedisafe_test` database on first run
+(creating it and applying Alembic migrations) because the DB-backed tests `TRUNCATE`
+every table between cases — pointing them at the development database would wipe the
+seeded demo accounts. Override the name with `TEST_DATABASE_NAME`, and note that
+`tests/conftest.py` rewrites `DATABASE_URL` for the whole run.
+
+`scripts/e2e_verify.ps1` and `scripts/e2e_prescription.ps1` are curl-driven smoke
+checks against a running server; edit the `$base` port at the top of each to match
+wherever your API is listening.
 
 ---
 
