@@ -1,0 +1,90 @@
+# Production stack for a single Oracle Cloud (or any Docker-capable) VM:
+# Postgres + the API (migrated automatically on start, no --reload, no source
+# bind-mounts) + Caddy in front for automatic HTTPS.
+#
+# Usage on the VM:
+#   cp .env.example .env   # then fill in real secrets -- see the deployment guide
+#   docker compose -f docker-compose.prod.yml up --build -d
+#
+# Unlike docker-compose.yml (the local dev stack), Postgres is NOT published to
+# the host here: only the `app` service can reach it, over the compose
+# network's internal `db` hostname. Nothing but Caddy is internet-facing.
+
+name: hermedisafe
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: hermedisafe-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-hermedisafe}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hermedisafe}
+      POSTGRES_DB: ${POSTGRES_DB:-hermedisafe}
+    volumes:
+      - hermedisafe_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-hermedisafe} -d ${POSTGRES_DB:-hermedisafe}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hermedisafe-api
+    restart: unless-stopped
+    # Migrate on every start, then serve. Safe to repeat: Alembic no-ops once
+    # the schema is already at head.
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-hermedisafe}:${POSTGRES_PASSWORD:-hermedisafe}@db:5432/${POSTGRES_DB:-hermedisafe}
+      APP_NAME: ${APP_NAME:-HerMediSafe API}
+      ENVIRONMENT: production
+      DEBUG: "false"
+      CORS_ORIGINS: ${CORS_ORIGINS:-["*"]}
+      SECRET_KEY: ${SECRET_KEY}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-flash-latest}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-openai/gpt-oss-120b}
+      PUBMED_API_KEY: ${PUBMED_API_KEY:-}
+    volumes:
+      # Named volume, not a bind mount of source: the image's baked-in code
+      # runs as built. This one is for uploaded prescription files, so they
+      # survive a container restart/redeploy instead of vanishing with the
+      # container filesystem.
+      - hermedisafe_storage:/app/storage
+    depends_on:
+      db:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: hermedisafe-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+volumes:
+  hermedisafe_pgdata:
+    name: hermedisafe_pgdata
+  hermedisafe_storage:
+    name: hermedisafe_storage
+  caddy_data:
+    name: hermedisafe_caddy_data
+  caddy_config:
+    name: hermedisafe_caddy_config
