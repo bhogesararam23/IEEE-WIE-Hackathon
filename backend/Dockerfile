@@ -20,6 +20,7 @@ COPY alembic.ini ./
 COPY alembic ./alembic
 COPY app ./app
 COPY tests ./tests
+COPY start.sh ./
 
 # Drop privileges for runtime.
 RUN useradd --create-home --uid 1000 appuser \
