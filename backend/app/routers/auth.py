@@ -9,7 +9,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import client_ip
-from app.schemas.auth import LoginRequest, SignupRequest, TokenResponse
+from app.schemas.auth import (
+    GoogleAuthRequest,
+    LoginRequest,
+    SignupRequest,
+    TokenResponse,
+)
 from app.services import auth as auth_service
 from app.services.audit import AuditAction, record
 
@@ -140,6 +145,77 @@ async def login(
     await record(
         session,
         action=AuditAction.LOGIN,
+        resource_type="user",
+        resource_id=user.id,
+        user_id=user.id,
+        ip_address=ip,
+    )
+    await session.commit()
+    return TokenResponse.build(
+        token=result.access_token,
+        expires_in=result.expires_in,
+        user_id=user.id,
+        email=user.email,
+    )
+
+
+@router.post(
+    "/google",
+    response_model=TokenResponse,
+    summary="Exchange a verified Google ID token for an access token",
+    responses={
+        200: {
+            "description": "Authenticated (or a new account was created); "
+            "returns a bearer token."
+        },
+        401: {
+            "description": "The ID token failed verification, or its email "
+            "is unverified."
+        },
+        422: {"description": "Validation failed."},
+        503: {"description": "GOOGLE_CLIENT_ID is not configured on this server."},
+    },
+)
+async def google_auth(
+    payload: GoogleAuthRequest, request: Request, session: SessionDep
+) -> TokenResponse:
+    """Verify a Google Identity Services credential and sign the user in.
+
+    Finds an existing account by the token's (Google-verified) email, or
+    creates one -- see ``auth_service.authenticate_google`` for exactly how
+    that decision is made and why. Issues the same kind of app JWT as
+    ``/auth/login``, so nothing downstream needs to know how the session
+    started.
+    """
+    ip = client_ip(request)
+    try:
+        user, created = await auth_service.authenticate_google(
+            session, credential=payload.credential
+        )
+    except auth_service.GoogleNotConfiguredError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Google sign-in is not configured on this server",
+        ) from None
+    except auth_service.GoogleAuthError as exc:
+        await record(
+            session,
+            action=AuditAction.GOOGLE_LOGIN_FAILED,
+            resource_type="user",
+            resource_id="unknown",
+            user_id=None,
+            ip_address=ip,
+        )
+        await session.commit()
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Could not verify Google credential: {exc}",
+        ) from None
+
+    result = auth_service.issue_token(user)
+    await record(
+        session,
+        action=AuditAction.GOOGLE_SIGNUP if created else AuditAction.GOOGLE_LOGIN,
         resource_type="user",
         resource_id=user.id,
         user_id=user.id,

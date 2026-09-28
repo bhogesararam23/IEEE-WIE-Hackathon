@@ -169,6 +169,15 @@ class Settings(BaseSettings):
         "E-utilities works without a key at the lower limit.",
     )
 
+    # --- Google Sign-In ----------------------------------------------------
+    google_client_id: str | None = Field(
+        default=None,
+        description="OAuth 2.0 Web client ID from Google Cloud Console "
+        "(APIs & Services -> Credentials). Required audience check for every "
+        "Google ID token POST /auth/google verifies -- without it, "
+        "/auth/google always returns 503.",
+    )
+
 
 @lru_cache
 def get_settings() -> Settings:
