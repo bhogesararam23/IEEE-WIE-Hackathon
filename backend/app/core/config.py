@@ -56,6 +56,15 @@ class Settings(BaseSettings):
         default=5.0,
         description="Seconds to wait for the database health probe.",
     )
+    db_ssl_require: bool = Field(
+        # Off by default so local/test Postgres (no TLS configured) is
+        # untouched. Managed Postgres like Neon requires TLS; set this true in
+        # that environment's .env rather than fighting asyncpg's inconsistent
+        # support for `sslmode=` in the URL's query string across versions --
+        # an explicit connect_args={"ssl": True} works reliably everywhere.
+        default=False,
+        description="Require TLS for the database connection (managed Postgres).",
+    )
 
     # --- CORS ------------------------------------------------------------
     cors_origins: list[str] = Field(
