@@ -85,15 +85,20 @@ This document defines the REST API contract for the HerMediSafe FastAPI backend.
 - **Request Body (`application/json`):**
 ```json
 {
-  "question": "Can I take paracetamol for a headache?"
+  "question": "Can I take paracetamol for a headache?",
+  "language": "en"
 }
 ```
+  `language` is `"en"` (default) or `"hi"`; when `"hi"`, the answer is
+  translated to Hindi via MyMemory (falling back to the English text if
+  translation fails) and the disclaimer is returned pre-translated.
 - **Response (`200 OK`):**
 ```json
 {
   "answer": "Paracetamol is generally considered the first-choice pain reliever...",
   "model_used": "gemini",
-  "disclaimer": "This is general information, not a diagnosis or prescription..."
+  "disclaimer": "This is general information, not a diagnosis or prescription...",
+  "language": "en"
 }
 ```
 - **Errors:** `503` if neither provider is configured, or both calls fail.
@@ -145,6 +150,16 @@ This document defines the REST API contract for the HerMediSafe FastAPI backend.
 - **Auth Required:** No
 - **Request Body:** `{"email": "user@example.com", "password": "Password123!"}`
 - **Response (`200 OK`):** Returns token dictionary.
+
+### `POST /auth/google`
+- **Auth Required:** No
+- **Purpose:** Verifies a Google Identity Services ID token server-side
+  (against Google's own public keys), then finds or creates an account by the
+  token's verified email.
+- **Request Body:** `{"credential": "<Google ID token JWT>"}`
+- **Response (`200 OK`):** Same token dictionary as `/auth/login`.
+- **Errors:** `503` if `GOOGLE_CLIENT_ID` isn't configured on the server;
+  `401` if the token fails verification.
 
 ---
 
