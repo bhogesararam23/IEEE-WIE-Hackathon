@@ -7,6 +7,14 @@ AI assistant.
 Built by team **NOMOS** for IEEE WIE ILS 2026 (Track 2: HealthTech — Problem
 Statement #4, *The Polypharmacy Crisis*).
 
+We picked this problem because it's one almost every family has run into in
+some form: a pregnant or breastfeeding woman ends up with prescriptions from
+two or three different doctors, plus whatever she's bought over the counter,
+and nobody in that chain has the full list in front of them at once. It's not
+a hard problem to describe — it's a hard problem to actually fix without
+turning it into something that pretends to diagnose or prescribe. That's the
+line we tried to stay on the right side of throughout this build.
+
 ## The problem
 
 Women often collect medicines from several disconnected sources — an
@@ -233,3 +241,11 @@ The problem framing above draws on:
   Hospitals.* Indian J Pharm Educ Res, 2023.
 - Anand A et al. *Prevalence of Polypharmacy in Pregnancy: A Systematic
   Review.* BMJ Open, 2023.
+
+---
+
+This is Team NOMOS's submission for Round 2 — the "What is real, and what is
+still a prototype" section above is not a formality, we mean it literally.
+Everything listed as wired to the API is live on the deployment linked at the
+top of this file, right now, and you're welcome to sign up and try it
+yourself instead of taking our word for it.
