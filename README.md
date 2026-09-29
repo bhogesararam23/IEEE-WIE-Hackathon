@@ -63,8 +63,9 @@ against the deployed API).
 | **Database** | Neon | Managed Postgres, TLS required (`DB_SSL_REQUIRE=True`) |
 
 All three tiers are on genuinely free plans — no credit card was used anywhere
-in this deployment. Sign in with your own account, **Sign in with Google**, or
-one of the seeded demo accounts below.
+in this deployment. The live app takes real sign-ups only — create your own
+account or use **Sign in with Google**; there are no demo/shared logins on
+production.
 
 ## Features
 
@@ -118,7 +119,9 @@ file for exactly where to get each one), plus the matching
 without them; Ask HerMedi AI returns a 503 and the Google button simply
 doesn't render until they're set.
 
-**Demo accounts** (created by `seed_demo.py`, password `DemoUser123!`):
+**Demo accounts** (local only — created by `seed_demo.py` against your local
+database, password `DemoUser123!`; production has no demo accounts, real
+sign-ups only):
 
 - `demo_pregnant@hermedisafe.org` — pregnant, trimester 2, one HIGH severity
   interaction alert (Ciprofloxacin + Moxifloxacin).
