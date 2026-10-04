@@ -249,3 +249,17 @@ still a prototype" section above is not a formality, we mean it literally.
 Everything listed as wired to the API is live on the deployment linked at the
 top of this file, right now, and you're welcome to sign up and try it
 yourself instead of taking our word for it.
+
+## Team Members
+
+| No. | Teammate | githubID | Role|
+| :--- | :--- | :--- | :--- | 
+| 1| Hiren Vala | **[hiren vala](https://github.com/phoros-code)** | Product & Strategy |
+| 2| Ram Bhogesara | **[bhogesararam23](https://github.com/bhogesararam23)** | AI, OCR & Data |
+| 3| Hetvi Patel | **[Hetvi Patel](https://github.com/Hetvi4728)** | Clinical & Medical Research |
+| 4| Fairy Solanki | **[Fairy23-source](https://github.com/Fairy23-source)** | Frontend, Mobile & UX |
+| 5| Mayank Lumbhani | **[Mayank Lumbhani](https://github.com/MayankLumbhani)** | Backend |
+| 6| Rudra Siddhpara | **[siddhpararudra2-debug](https://github.com/siddhpararudra2-debug)** | Validation & Testing |
+
+
+---
